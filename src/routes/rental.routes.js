@@ -4,7 +4,7 @@ import {
   deleteRent,
   finishRent,
   getRentals,
-} from "../controllers/rental.controller";
+} from "../controllers/rental.controller.js";
 
 const rentalRouter = Router();
 
