@@ -76,7 +76,7 @@ export async function addCustomer(req, res) {
     await db.query(
       `
       INSERT INTO customers (name, phone, cpf, birthday)
-      VALUES ($1, $2, $3, $4);
+      VALUES ($1, $2, $3, to_char($4, 'YYYY-MM-DD'));
       `,
       [name, phone, cpf, birthday]
     );
@@ -144,7 +144,7 @@ export async function updateCustomer(req, res) {
     await db.query(
       `
       UPDATE customers 
-      SET name = $1, phone = $2, cpf = $3, birthday = $4
+      SET name = $1, phone = $2, cpf = $3, birthday = to_char($4, 'YYYY-MM-DD')
       WHERE id = $5;
       `,
       [name, phone, cpf, birthday, id]
