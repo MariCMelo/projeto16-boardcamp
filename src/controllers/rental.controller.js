@@ -153,12 +153,11 @@ export async function finishRent(req, res) {
     const daysRented = rentData.daysRented;
     const pricePerDay = rentData.originalPrice / daysRented;
 
-    const currentDate = new Date();
-    const delayDays = Math.max(
-      0,
-      Math.ceil((currentDate - rentDate) / (1000 * 60 * 60 * 24))
-    );
 
+    const currentDate = new Date();
+    const delayDays = Math.floor(Math.abs(currentDate - rentDate) / (1000 * 60 * 60 * 24))
+
+   
     const delayFee = delayDays * pricePerDay;
 
     await db.query(
@@ -169,6 +168,10 @@ export async function finishRent(req, res) {
       `,
       [delayFee, id]
     );
+
+      console.log("delayFee", delayFee)
+      console.log("delayDays", delayDays)
+      console.log("pricePerDay", pricePerDay)
 
     res.sendStatus(200);
   } catch (err) {
