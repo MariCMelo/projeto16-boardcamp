@@ -128,6 +128,7 @@ export async function addRent(req, res) {
 //POST FINALRENT
 export async function finishRent(req, res) {
   const { id } = req.params;
+
   try {
     const rental = await db.query(
       `
@@ -138,20 +139,24 @@ export async function finishRent(req, res) {
       [id]
     );
 
-    if (rental.rows.length === 0) {
+    const rentData = rental.rows[0];
+
+    if (!rentData) {
       return res.status(404).json({ error: "Aluguel não encontrado." });
     }
-    if (rental.rows[0].returnDate) {
+
+    if (rentData.returnDate) {
       return res.status(400).json({ error: "Aluguel já finalizado." });
     }
-    const rentDate = new Date(rental.rows[0].rentDate);
-    const daysRented = rental.rows[0].daysRented;
-    const pricePerDay = rental.rows[0].originalPrice / daysRented;
+
+    const rentDate = new Date(rentData.rentDate);
+    const daysRented = rentData.daysRented;
+    const pricePerDay = rentData.originalPrice / daysRented;
 
     const currentDate = new Date();
     const delayDays = Math.max(
       0,
-      Math.ceil((currentDate - rentDate) / (1000 * 60 * 60 * 24)) - daysRented
+      Math.ceil((currentDate - rentDate) / (1000 * 60 * 60 * 24))
     );
 
     const delayFee = delayDays * pricePerDay;
@@ -162,7 +167,7 @@ export async function finishRent(req, res) {
       SET "returnDate" = NOW(), "delayFee" = $1
       WHERE id = $2;
       `,
-      [delayFee, id]
+      [Math.max(0, delayFee), id]
     );
 
     res.sendStatus(200);
@@ -190,7 +195,9 @@ export async function deleteRent(req, res) {
     }
 
     if (rental.rows[0].returnDate) {
-      return res.status(400).json({ error: "Não é possível excluir um aluguel finalizado." });
+      return res
+        .status(400)
+        .json({ error: "Não é possível excluir um aluguel finalizado." });
     }
 
     await db.query(
