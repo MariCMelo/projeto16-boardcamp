@@ -1,9 +1,16 @@
+import Joi from "joi";
 import { db } from "../database/database.connection.js";
+
+const birthdaySchema = Joi.date().iso().label("Data de aniversário").raw();
 
 // GET
 export async function getCustomers(req, res) {
   try {
-    const customers = await db.query(`SELECT * FROM customers`);
+    const customers = await db.query(`
+      SELECT id, name, phone, cpf, to_char(birthday, 'YYYY-MM-DD') as birthday
+      FROM customers;
+    `);
+    console.log(customers.rows[0])
     res.send(customers.rows);
   } catch (err) {
     res.status(500).json({ error: "Ocorreu um erro ao buscar os clientes." });
@@ -15,12 +22,11 @@ export async function getCustomersById(req, res) {
   const { id } = req.params;
 
   try {
-    console.log("teste clientes");
     const result = await db.query(
       `
-      SELECT * 
-        FROM customers 
-        WHERE customers.id = $1;
+      SELECT id, name, phone, cpf, to_char(birthday, 'YYYY-MM-DD') as birthday
+      FROM customers 
+      WHERE id = $1;
       `,
       [id]
     );
@@ -37,24 +43,24 @@ export async function getCustomersById(req, res) {
 export async function addCustomer(req, res) {
   const { name, phone, cpf, birthday } = req.body;
 
+  const schema = Joi.object({
+    name: Joi.string().trim().required(),
+    phone: Joi.string()
+      .pattern(/^\d{10,11}$/)
+      .required(),
+    cpf: Joi.string().length(11).pattern(/^\d+$/).required(),
+    birthday: Joi.date().iso().required(),
+  });
+
+  const { error } = schema.validate({ name, phone, cpf, birthday });
+
   if (!cpf || cpf.length !== 11 || !/^\d+$/.test(cpf)) {
     return res.status(400).json({ error: "CPF inválido." });
   }
 
-  if (
-    !phone ||
-    (phone.length !== 10 && phone.length !== 11) ||
-    !/^\d+$/.test(phone)
-  ) {
-    return res.status(400).json({ error: "Telefone inválido." });
-  }
-
-  if (!name || name.trim() === "") {
-    return res.status(400).json({ error: "Nome inválido." });
-  }
-
-  if (isNaN(Date.parse(birthday))) {
-    return res.status(400).json({ error: "Data de aniversário inválida." });
+  if (error) {
+    const errorMessage = error.details[0].message;
+    return res.status(400).json({ error: errorMessage });
   }
 
   try {
@@ -76,7 +82,7 @@ export async function addCustomer(req, res) {
     await db.query(
       `
       INSERT INTO customers (name, phone, cpf, birthday)
-      VALUES ($1, $2, $3, to_char($4, 'YYYY-MM-DD'));
+      VALUES ($1, $2, $3, $4);
       `,
       [name, phone, cpf, birthday]
     );
@@ -86,7 +92,6 @@ export async function addCustomer(req, res) {
     res.status(500).send(err.message);
   }
 }
-
 //PUT CUSTUMER
 export async function updateCustomer(req, res) {
   const { name, phone, cpf, birthday } = req.body;
@@ -144,7 +149,7 @@ export async function updateCustomer(req, res) {
     await db.query(
       `
       UPDATE customers 
-      SET name = $1, phone = $2, cpf = $3, birthday = to_char($4, 'YYYY-MM-DD')
+      SET name = $1, phone = $2, cpf = $3, birthday = $4
       WHERE id = $5;
       `,
       [name, phone, cpf, birthday, id]
