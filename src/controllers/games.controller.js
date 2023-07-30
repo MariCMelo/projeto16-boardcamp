@@ -25,8 +25,8 @@ export async function addGame(req, res) {
     if (gameExists.rows.length > 0) {
       return res.status(409).send("Jogo já existente.");
     }
-    console.log("teste 1");
-    const result = await db.query(
+
+    await db.query(
       `INSERT INTO games (name, image, "stockTotal", "pricePerDay") VALUES ($1, $2, $3, $4)`,
       [name, image, stockTotal, pricePerDay]
     );
