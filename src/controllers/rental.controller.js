@@ -139,11 +139,11 @@ export async function finishRent(req, res) {
       [id]
     );
 
-    const rentData = rental.rows[0];
-
-    if (!rentData) {
+    if (rental.rows.length === 0) {
       return res.status(404).json({ error: "Aluguel não encontrado." });
     }
+
+    const rentData = rental.rows[0];
 
     if (rentData.returnDate) {
       return res.status(400).json({ error: "Aluguel já finalizado." });
@@ -167,7 +167,7 @@ export async function finishRent(req, res) {
       SET "returnDate" = NOW(), "delayFee" = $1
       WHERE id = $2;
       `,
-      [Math.max(0, delayFee), id]
+      [delayFee, id]
     );
 
     res.sendStatus(200);
@@ -175,7 +175,6 @@ export async function finishRent(req, res) {
     res.status(500).send(err.message);
   }
 }
-
 //DELETE RENT
 export async function deleteRent(req, res) {
   const { id } = req.params;
@@ -195,9 +194,7 @@ export async function deleteRent(req, res) {
     }
 
     if (rental.rows[0].returnDate) {
-      return res
-        .status(400)
-        .json({ error: "Não é possível excluir um aluguel finalizado." });
+      return res.status(400).json({ error: "Não é possível excluir um aluguel finalizado." });
     }
 
     await db.query(
