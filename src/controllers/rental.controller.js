@@ -127,12 +127,82 @@ export async function addRent(req, res) {
 
 //POST FINALRENT
 export async function finishRent(req, res) {
+  const { id } = req.params;
   try {
-  } catch (err) {}
+    const rental = await db.query(
+      `
+      SELECT *
+      FROM rentals
+      WHERE id = $1;
+      `,
+      [id]
+    );
+
+    if (rental.rows.length === 0) {
+      return res.status(404).json({ error: "Aluguel não encontrado." });
+    }
+    if (rental.rows[0].returnDate) {
+      return res.status(400).json({ error: "Aluguel já finalizado." });
+    }
+    const rentDate = new Date(rental.rows[0].rentDate);
+    const daysRented = rental.rows[0].daysRented;
+    const pricePerDay = rental.rows[0].originalPrice / daysRented;
+
+    const currentDate = new Date();
+    const delayDays = Math.max(
+      0,
+      Math.ceil((currentDate - rentDate) / (1000 * 60 * 60 * 24)) - daysRented
+    );
+
+    const delayFee = delayDays * pricePerDay;
+
+    await db.query(
+      `
+      UPDATE rentals
+      SET "returnDate" = NOW(), "delayFee" = $1
+      WHERE id = $2;
+      `,
+      [delayFee, id]
+    );
+
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 }
 
 //DELETE RENT
 export async function deleteRent(req, res) {
+  const { id } = req.params;
+
   try {
-  } catch (err) {}
+    const rental = await db.query(
+      `
+      SELECT *
+      FROM rentals
+      WHERE id = $1;
+      `,
+      [id]
+    );
+
+    if (rental.rows.length === 0) {
+      return res.status(404).json({ error: "Aluguel não encontrado." });
+    }
+
+    if (rental.rows[0].returnDate) {
+      return res.status(400).json({ error: "Não é possível excluir um aluguel finalizado." });
+    }
+
+    await db.query(
+      `
+      DELETE FROM rentals
+      WHERE id = $1;
+      `,
+      [id]
+    );
+
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 }
