@@ -179,35 +179,8 @@ export async function finishRent(req, res) {
 //DELETE RENT
 export async function deleteRent(req, res) {
   const { id } = req.params;
-
   try {
-    const rental = await db.query(
-      `
-      SELECT *
-      FROM rentals
-      WHERE id = $1;
-      `,
-      [id]
-    );
-
-    if (rental.rows.length === 0) {
-      return res.status(404).json({ error: "Aluguel não encontrado." });
-    }
-
-    if (rental.rows[0].returnDate) {
-      return res
-        .status(400)
-        .json({ error: "Não é possível excluir um aluguel finalizado." });
-    }
-
-    await db.query(
-      `
-      DELETE FROM rentals
-      WHERE id = $1;
-      `,
-      [id]
-    );
-
+    await db.query(`DELETE FROM rentals WHERE id=$1`, [id]);
     res.sendStatus(200);
   } catch (err) {
     res.status(500).send(err.message);
