@@ -194,10 +194,12 @@ export async function deleteRent(req, res) {
       return res.status(404).json({ error: "Aluguel não encontrado." });
     }
 
-    if (rental.rows[0].returnDate !== null) {
+    if (rental.rows[0].returnDate === null) {
+
+      console.log("rental --->", rental)
       return res
         .status(400)
-        .json({ error: "Não é possível excluir um aluguel finalizado." });
+        .json({ error: "Não é possível excluir um aluguel não finalizado." });
     }
 
     await db.query(
