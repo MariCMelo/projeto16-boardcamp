@@ -153,8 +153,9 @@ export async function finishRent(req, res) {
     const daysRented = rentData.daysRented;
     const pricePerDay = rentData.originalPrice / daysRented;
     const currentDate = new Date();
-    const delayDays = Math.floor(Math.abs(currentDate - rentDate) / (1000 * 60 * 60 * 24));
-
+    const delayDays = Math.floor(
+      Math.abs(currentDate - rentDate) / (1000 * 60 * 60 * 24)
+    );
     const delayFee = delayDays * pricePerDay;
 
     await db.query(
@@ -169,7 +170,6 @@ export async function finishRent(req, res) {
     console.log("delayFee", delayFee);
     console.log("delayDays", delayDays);
     console.log("pricePerDay", pricePerDay);
-    console.log("RentDate", rentDate);
 
     res.sendStatus(200);
   } catch (err) {
@@ -195,7 +195,9 @@ export async function deleteRent(req, res) {
     }
 
     if (rental.rows[0].returnDate) {
-      return res.status(400).json({ error: "Não é possível excluir um aluguel finalizado." });
+      return res
+        .status(400)
+        .json({ error: "Não é possível excluir um aluguel finalizado." });
     }
 
     await db.query(
