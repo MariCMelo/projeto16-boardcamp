@@ -5,6 +5,7 @@ const birthdaySchema = Joi.date().iso().label("Data de aniversário").raw();
 
 // GET
 export async function getCustomers(req, res) {
+  console.log("entrou")
   try {
     const customers = await db.query(`
       SELECT id, name, phone, cpf, to_char(birthday, 'YYYY-MM-DD') as birthday
