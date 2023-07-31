@@ -1,17 +1,15 @@
 import Joi from "joi";
 import { db } from "../database/database.connection.js";
 
-const birthdaySchema = Joi.date().iso().label("Data de aniversário").raw();
-
 // GET
 export async function getCustomers(req, res) {
-  console.log("entrou")
+  console.log("entrou");
   try {
     const customers = await db.query(`
       SELECT id, name, phone, cpf, to_char(birthday, 'YYYY-MM-DD') as birthday
       FROM customers;
     `);
-    console.log(customers.rows[0])
+    console.log(customers.rows[0]);
     res.send(customers.rows);
   } catch (err) {
     res.status(500).json({ error: "Ocorreu um erro ao buscar os clientes." });
